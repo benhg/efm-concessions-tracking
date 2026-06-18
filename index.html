@@ -128,6 +128,69 @@
 
         <div class="totals-grid" id="totalsGrid"></div>
 
+        <section class="panel" aria-labelledby="marginHeading">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Margin</p>
+              <h2 id="marginHeading">Costs and tax</h2>
+            </div>
+          </div>
+
+          <div class="margin-controls">
+            <label>
+              Sales tax rate (%)
+              <input id="taxRateInput" inputmode="decimal" min="0" step="0.001" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Tax treatment
+              <select id="taxModeSelect">
+                <option value="included">Included in sale prices</option>
+                <option value="added">Added on top of sales</option>
+              </select>
+            </label>
+            <label>
+              Donut cost
+              <input data-margin-cost="donut" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Coffee cup cost
+              <input data-margin-cost="coffeeCup" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Coffee beans cost
+              <input data-margin-cost="coffeeBeans" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Coffee other cost
+              <input data-margin-cost="coffeeOther" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Water cost
+              <input data-margin-cost="water" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Soda cost
+              <input data-margin-cost="soda" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+          </div>
+
+          <div class="margin-summary-grid" id="marginSummaryGrid"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cost line</th>
+                  <th class="numeric">Qty</th>
+                  <th class="numeric">Unit cost</th>
+                  <th class="numeric">Total cost</th>
+                </tr>
+              </thead>
+              <tbody id="marginBreakdownBody"></tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="panel">
           <div class="section-heading compact">
             <div>

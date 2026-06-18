@@ -19,6 +19,7 @@ The app is static and dependency-free. Once it has loaded over `localhost`, its 
 - Markdowns: free coffee with donut, item-level free, 2-for-1, 3-for-2, and custom per-item prices.
 - Direct donations plus extra donation from change the customer declines.
 - Amount paid, recommended change, actual change given, expected cash, discounts, and item totals.
+- Margin estimates using editable item costs, coffee component costs, and sales tax assumptions.
 - Voidable transaction history with CSV and JSON export.
 
 ## Tests

@@ -10,6 +10,19 @@ export const DEFAULT_STANDARD_PRICING = {
   pairPriceCents: 500
 };
 
+export const DEFAULT_MARGIN_SETTINGS = {
+  taxRate: "0.00",
+  taxMode: "included",
+  costs: {
+    donut: "0.00",
+    coffeeCup: "0.00",
+    coffeeBeans: "0.00",
+    coffeeOther: "0.00",
+    water: "0.00",
+    soda: "0.00"
+  }
+};
+
 export const DEAL_TYPES = {
   standard: "Standard combo",
   free: "Free",
@@ -37,6 +50,14 @@ export function defaultStandardPricing() {
   return {
     unitPrice: centsToDecimalString(DEFAULT_STANDARD_PRICING.unitPriceCents),
     pairPrice: centsToDecimalString(DEFAULT_STANDARD_PRICING.pairPriceCents)
+  };
+}
+
+export function defaultMarginSettings() {
+  return {
+    taxRate: DEFAULT_MARGIN_SETTINGS.taxRate,
+    taxMode: DEFAULT_MARGIN_SETTINGS.taxMode,
+    costs: { ...DEFAULT_MARGIN_SETTINGS.costs }
   };
 }
 
@@ -278,6 +299,76 @@ export function summarizeTransactions(transactions = []) {
   return { totals, itemTotals };
 }
 
+export function calculateMarginReport(transactions = [], settings = {}) {
+  const { totals, itemTotals } = summarizeTransactions(transactions);
+  const marginSettings = normalizeMarginSettings(settings);
+  const taxRate = marginSettings.taxRateDecimal;
+  const taxableSalesCents = totals.saleSubtotalCents;
+  const salesTaxCents =
+    marginSettings.taxMode === "added"
+      ? Math.round(taxableSalesCents * taxRate)
+      : taxableSalesCents - Math.round(taxableSalesCents / (1 + taxRate));
+  const netSalesCents =
+    marginSettings.taxMode === "added"
+      ? taxableSalesCents
+      : taxableSalesCents - salesTaxCents;
+  const grossReceiptsCents =
+    marginSettings.taxMode === "added"
+      ? taxableSalesCents + salesTaxCents
+      : taxableSalesCents;
+  const costRows = [
+    {
+      id: "donut",
+      label: "Donuts",
+      quantity: itemTotals.donut,
+      unitCostCents: marginSettings.costCents.donut
+    },
+    {
+      id: "coffee",
+      label: "Coffee",
+      quantity: itemTotals.coffee,
+      unitCostCents:
+        marginSettings.costCents.coffeeCup +
+        marginSettings.costCents.coffeeBeans +
+        marginSettings.costCents.coffeeOther
+    },
+    {
+      id: "water",
+      label: "Water",
+      quantity: itemTotals.water,
+      unitCostCents: marginSettings.costCents.water
+    },
+    {
+      id: "soda",
+      label: "Soda",
+      quantity: itemTotals.soda,
+      unitCostCents: marginSettings.costCents.soda
+    }
+  ].map((row) => ({
+    ...row,
+    totalCostCents: row.quantity * row.unitCostCents
+  }));
+  const totalCostCents = costRows.reduce((sum, row) => sum + row.totalCostCents, 0);
+  const grossProfitCents = netSalesCents - totalCostCents;
+  const marginPercent = netSalesCents > 0 ? (grossProfitCents / netSalesCents) * 100 : 0;
+  const cashAfterTaxAndCostsCents = totals.cashKeptCents - salesTaxCents - totalCostCents;
+
+  return {
+    totals,
+    itemTotals,
+    settings: marginSettings,
+    taxableSalesCents,
+    grossReceiptsCents,
+    netSalesCents,
+    salesTaxCents,
+    totalCostCents,
+    grossProfitCents,
+    marginPercent,
+    cashAfterTaxAndCostsCents,
+    costRows
+  };
+}
+
 function normalizeQuantities(quantities = {}) {
   return Object.fromEntries(
     ITEMS.map((item) => [
@@ -317,6 +408,25 @@ function priceSettingToCents(value, fallbackCents) {
 
   const cents = moneyToCents(value);
   return clampNonNegative(cents);
+}
+
+function normalizeMarginSettings(settings = {}) {
+  const defaults = defaultMarginSettings();
+  const costs = { ...defaults.costs, ...(settings.costs || {}) };
+  const taxRate = settings.taxRate ?? defaults.taxRate;
+  const taxRateDecimal = Math.max(0, Number(taxRate) || 0) / 100;
+  const taxMode = settings.taxMode === "added" ? "added" : "included";
+  const costCents = Object.fromEntries(
+    Object.keys(defaults.costs).map((key) => [key, clampNonNegative(moneyToCents(costs[key]))])
+  );
+
+  return {
+    taxRate,
+    taxRateDecimal,
+    taxMode,
+    costs,
+    costCents
+  };
 }
 
 function clampNonNegative(value) {

@@ -1,8 +1,10 @@
 import {
   DEAL_TYPES,
   ITEMS,
+  calculateMarginReport,
   computeTransaction,
   defaultItemDeals,
+  defaultMarginSettings,
   defaultQuantities,
   defaultStandardPricing,
   formatMoney,
@@ -18,6 +20,7 @@ const state = {
   quantities: defaultQuantities(),
   itemDeals: defaultItemDeals(),
   standardPricing: savedSettings.standardPricing || defaultStandardPricing(),
+  marginSettings: mergeMarginSettings(savedSettings.marginSettings),
   freeCoffeeWithDonut: false,
   transactions: loadTransactions(),
   deferredInstallPrompt: null
@@ -27,6 +30,9 @@ const itemGrid = $("#itemGrid");
 const markdownGrid = $("#markdownGrid");
 const standardSingleInput = $("#standardSingleInput");
 const standardPairInput = $("#standardPairInput");
+const taxRateInput = $("#taxRateInput");
+const taxModeSelect = $("#taxModeSelect");
+const marginCostInputs = document.querySelectorAll("[data-margin-cost]");
 const freeCoffeeToggle = $("#freeCoffeeToggle");
 const directDonationInput = $("#directDonationInput");
 const tenderedInput = $("#tenderedInput");
@@ -36,6 +42,8 @@ const pricingNotes = $("#pricingNotes");
 const validationMessage = $("#validationMessage");
 const recordButton = $("#recordButton");
 const totalsGrid = $("#totalsGrid");
+const marginSummaryGrid = $("#marginSummaryGrid");
+const marginBreakdownBody = $("#marginBreakdownBody");
 const itemTotalsBody = $("#itemTotalsBody");
 const historyList = $("#historyList");
 const offlineStatus = $("#offlineStatus");
@@ -136,6 +144,26 @@ function bindEvents() {
       };
       saveSettings();
       render();
+    });
+  });
+
+  taxRateInput.addEventListener("input", () => {
+    state.marginSettings.taxRate = taxRateInput.value;
+    saveSettings();
+    renderReports();
+  });
+
+  taxModeSelect.addEventListener("change", () => {
+    state.marginSettings.taxMode = taxModeSelect.value;
+    saveSettings();
+    renderReports();
+  });
+
+  marginCostInputs.forEach((input) => {
+    input.addEventListener("input", () => {
+      state.marginSettings.costs[input.dataset.marginCost] = input.value;
+      saveSettings();
+      renderReports();
     });
   });
 
@@ -262,6 +290,7 @@ function renderReports() {
   const { totals, itemTotals } = summarizeTransactions(state.transactions);
   const activeTransactions = state.transactions.filter((transaction) => !transaction.voidedAt);
   const voidedTransactions = state.transactions.length - activeTransactions.length;
+  const marginReport = calculateMarginReport(state.transactions, state.marginSettings);
 
   totalsGrid.innerHTML = [
     ["Sales", formatMoney(totals.saleSubtotalCents)],
@@ -280,6 +309,8 @@ function renderReports() {
       `
     )
     .join("");
+
+  renderMarginReport(marginReport);
 
   itemTotalsBody.innerHTML = ITEMS.map(
     (item) => `
@@ -300,6 +331,46 @@ function renderReports() {
     .slice()
     .reverse()
     .map(renderHistoryItem)
+    .join("");
+}
+
+function renderMarginReport(marginReport) {
+  taxRateInput.value = state.marginSettings.taxRate;
+  taxModeSelect.value = state.marginSettings.taxMode;
+  marginCostInputs.forEach((input) => {
+    input.value = state.marginSettings.costs[input.dataset.marginCost] ?? "";
+  });
+
+  marginSummaryGrid.innerHTML = [
+    ["Taxed item receipts", formatMoney(marginReport.grossReceiptsCents)],
+    ["Net item sales", formatMoney(marginReport.netSalesCents)],
+    ["Sales tax", formatMoney(marginReport.salesTaxCents)],
+    ["Cost of goods", formatMoney(marginReport.totalCostCents)],
+    ["Gross profit", formatMoney(marginReport.grossProfitCents)],
+    ["Gross margin", `${marginReport.marginPercent.toFixed(1)}%`],
+    ["Cash after tax/costs", formatMoney(marginReport.cashAfterTaxAndCostsCents)]
+  ]
+    .map(
+      ([label, value]) => `
+        <article class="margin-tile">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </article>
+      `
+    )
+    .join("");
+
+  marginBreakdownBody.innerHTML = marginReport.costRows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.label}</td>
+          <td class="numeric">${row.quantity}</td>
+          <td class="numeric">${formatMoney(row.unitCostCents)}</td>
+          <td class="numeric">${formatMoney(row.totalCostCents)}</td>
+        </tr>
+      `
+    )
     .join("");
 }
 
@@ -528,8 +599,25 @@ function saveTransactions() {
 function saveSettings() {
   localStorage.setItem(
     SETTINGS_KEY,
-    JSON.stringify({ standardPricing: state.standardPricing })
+    JSON.stringify({
+      standardPricing: state.standardPricing,
+      marginSettings: state.marginSettings
+    })
   );
+}
+
+function mergeMarginSettings(settings = {}) {
+  const defaults = defaultMarginSettings();
+  const taxMode = settings.taxMode === "added" ? "added" : defaults.taxMode;
+  return {
+    ...defaults,
+    ...settings,
+    taxMode,
+    costs: {
+      ...defaults.costs,
+      ...(settings.costs || {})
+    }
+  };
 }
 
 function downloadFile(filename, content, type) {

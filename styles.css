@@ -141,6 +141,7 @@ button:disabled {
 .panel,
 .item-control,
 .total-tile,
+.margin-tile,
 .history-item {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -404,22 +405,39 @@ button:focus-visible {
   gap: 0.75rem;
 }
 
-.total-tile {
+.total-tile,
+.margin-tile {
   display: grid;
   align-content: center;
   min-height: 5.75rem;
   padding: 0.9rem;
 }
 
-.total-tile span {
+.total-tile span,
+.margin-tile span {
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
-.total-tile strong {
+.total-tile strong,
+.margin-tile strong {
   font-size: 1.35rem;
   line-height: 1.2;
+}
+
+.margin-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.margin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .table-wrap {
@@ -520,7 +538,12 @@ th {
   }
 
   .item-grid,
-  .totals-grid {
+  .totals-grid,
+  .margin-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .margin-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -551,7 +574,9 @@ th {
   .markdown-grid,
   .payment-grid,
   .standard-pricing-grid,
-  .totals-grid {
+  .totals-grid,
+  .margin-controls,
+  .margin-summary-grid {
     grid-template-columns: 1fr;
   }
 

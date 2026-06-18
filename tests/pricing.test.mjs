@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  calculateMarginReport,
   computeTransaction,
   defaultItemDeals,
   defaultQuantities,
@@ -116,6 +117,49 @@ test("summary excludes voided transactions", () => {
   assert.equal(totals.totalDonationCents, 100);
   assert.equal(itemTotals.donut, 2);
   assert.equal(itemTotals.coffee, 0);
+});
+
+test("margin report handles tax included in item sales", () => {
+  const transactions = [
+    computeTransaction({
+      quantities: { donut: 2, coffee: 1 },
+      directDonation: "2"
+    })
+  ];
+
+  const report = calculateMarginReport(transactions, {
+    taxRate: "10",
+    taxMode: "included",
+    costs: {
+      donut: "1.00",
+      coffeeCup: "0.10",
+      coffeeBeans: "0.40"
+    }
+  });
+
+  assert.equal(report.taxableSalesCents, 800);
+  assert.equal(report.salesTaxCents, 73);
+  assert.equal(report.netSalesCents, 727);
+  assert.equal(report.totalCostCents, 250);
+  assert.equal(report.grossProfitCents, 477);
+  assert.equal(report.cashAfterTaxAndCostsCents, 677);
+  assert.equal(report.costRows.find((row) => row.id === "coffee").unitCostCents, 50);
+});
+
+test("margin report can estimate tax added on top of sales", () => {
+  const transactions = [computeTransaction({ quantities: { donut: 2 } })];
+  const report = calculateMarginReport(transactions, {
+    taxRate: "10",
+    taxMode: "added",
+    costs: { donut: "1.00" }
+  });
+
+  assert.equal(report.taxableSalesCents, 500);
+  assert.equal(report.salesTaxCents, 50);
+  assert.equal(report.grossReceiptsCents, 550);
+  assert.equal(report.netSalesCents, 500);
+  assert.equal(report.totalCostCents, 200);
+  assert.equal(report.grossProfitCents, 300);
 });
 
 function priceFor(quantities) {

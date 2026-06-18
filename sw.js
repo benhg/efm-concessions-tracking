@@ -1,4 +1,4 @@
-const CACHE_NAME = "asvaro-concessions-v2";
+const CACHE_NAME = "asvaro-concessions-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
