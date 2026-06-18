@@ -15,6 +15,18 @@ test("standard combo charges singles at $3 and pairs at $5", () => {
   assert.equal(priceFor({ donut: 1, coffee: 1, water: 1, soda: 1 }), 1000);
 });
 
+test("standard combo pricing can be changed for markdowns", () => {
+  const result = computeTransaction({
+    quantities: { donut: 2, coffee: 1 },
+    standardPricing: { unitPrice: "2.00", pairPrice: "3.00" }
+  });
+
+  assert.equal(result.saleSubtotalCents, 500);
+  assert.equal(result.markdownCents, 400);
+  assert.equal(result.standardPricing.unitPriceCents, 200);
+  assert.equal(result.standardPricing.pairPriceCents, 300);
+});
+
 test("free coffee with donut comps one coffee per donut before combo pricing", () => {
   const result = computeTransaction({
     quantities: { donut: 1, coffee: 1 },

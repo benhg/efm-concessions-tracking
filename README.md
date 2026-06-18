@@ -15,7 +15,7 @@ The app is static and dependency-free. Once it has loaded over `localhost`, its 
 ## What it tracks
 
 - Donuts, coffee, water, and soda sold per transaction.
-- Standard pricing: $3 per item, any 2 items for $5, 3 items for $8, and so on.
+- Editable standard pricing: default $3 per item, any 2 items for $5, 3 items for $8, and so on.
 - Markdowns: free coffee with donut, item-level free, 2-for-1, 3-for-2, and custom per-item prices.
 - Direct donations plus extra donation from change the customer declines.
 - Amount paid, recommended change, actual change given, expected cash, discounts, and item totals.
@@ -32,3 +32,5 @@ npm test
 The repository includes a GitHub Actions workflow at `.github/workflows/pages.yml`.
 
 In GitHub, set **Settings -> Pages -> Build and deployment -> Source** to **GitHub Actions**. After that, pushes to `main` will run tests and deploy the static app to Pages.
+
+If the workflow reports `Get Pages site failed`, Pages has not been enabled for the repository yet. Enable the setting above, then re-run the failed workflow or push a new commit.

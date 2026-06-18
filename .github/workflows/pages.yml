@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Prepare static site
         run: |
@@ -49,10 +49,10 @@ jobs:
           cp index.html styles.css app.js pricing.js sw.js manifest.webmanifest icon.svg .nojekyll _site/
 
       - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

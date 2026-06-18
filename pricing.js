@@ -5,6 +5,11 @@ export const ITEMS = [
   { id: "soda", name: "Soda", unitPriceCents: 300, accent: "#be123c" }
 ];
 
+export const DEFAULT_STANDARD_PRICING = {
+  unitPriceCents: 300,
+  pairPriceCents: 500
+};
+
 export const DEAL_TYPES = {
   standard: "Standard combo",
   free: "Free",
@@ -13,7 +18,6 @@ export const DEAL_TYPES = {
   custom: "Custom each"
 };
 
-const STANDARD_PAIR_PRICE_CENTS = 500;
 const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD"
@@ -27,6 +31,13 @@ export function defaultItemDeals() {
   return Object.fromEntries(
     ITEMS.map((item) => [item.id, { type: "standard", customUnitPrice: "" }])
   );
+}
+
+export function defaultStandardPricing() {
+  return {
+    unitPrice: centsToDecimalString(DEFAULT_STANDARD_PRICING.unitPriceCents),
+    pairPrice: centsToDecimalString(DEFAULT_STANDARD_PRICING.pairPriceCents)
+  };
 }
 
 export function formatMoney(cents) {
@@ -62,6 +73,7 @@ export function optionalMoneyToCents(value) {
 export function computeTransaction(input = {}) {
   const quantities = normalizeQuantities(input.quantities);
   const itemDeals = normalizeItemDeals(input.itemDeals);
+  const standardPricing = normalizeStandardPricing(input.standardPricing);
   const directDonationCents = clampNonNegative(moneyToCents(input.directDonation));
   const tenderedCents = optionalMoneyToCents(input.tendered);
   const changeGivenCents = optionalMoneyToCents(input.changeGiven);
@@ -109,7 +121,7 @@ export function computeTransaction(input = {}) {
 
     if (deal.type === "twoForOne") {
       const chargedQuantity = Math.ceil(quantity / 2);
-      const amountCents = chargedQuantity * item.unitPriceCents;
+      const amountCents = chargedQuantity * standardPricing.unitPriceCents;
       specialSubtotalCents += amountCents;
       lineDetails.push({
         itemId: item.id,
@@ -125,7 +137,7 @@ export function computeTransaction(input = {}) {
 
     if (deal.type === "threeForTwo") {
       const chargedQuantity = Math.floor(quantity / 3) * 2 + (quantity % 3);
-      const amountCents = chargedQuantity * item.unitPriceCents;
+      const amountCents = chargedQuantity * standardPricing.unitPriceCents;
       specialSubtotalCents += amountCents;
       lineDetails.push({
         itemId: item.id,
@@ -162,13 +174,19 @@ export function computeTransaction(input = {}) {
   const comboPairs = Math.floor(comboQuantity / 2);
   const comboSingles = comboQuantity % 2;
   const comboSubtotalCents =
-    comboPairs * STANDARD_PAIR_PRICE_CENTS + comboSingles * ITEMS[0].unitPriceCents;
+    comboPairs * standardPricing.pairPriceCents + comboSingles * standardPricing.unitPriceCents;
 
   if (comboQuantity > 0) {
-    notes.push(
-      `Standard combo: ${comboPairs} pair${comboPairs === 1 ? "" : "s"} at $5` +
-        (comboSingles ? " plus 1 single at $3" : "")
-    );
+    const comboNotes = [];
+    if (comboPairs > 0) {
+      comboNotes.push(
+        `${comboPairs} pair${comboPairs === 1 ? "" : "s"} at ${formatMoney(standardPricing.pairPriceCents)}`
+      );
+    }
+    if (comboSingles > 0) {
+      comboNotes.push(`1 single at ${formatMoney(standardPricing.unitPriceCents)}`);
+    }
+    notes.push(`Standard combo: ${comboNotes.join(" plus ")}`);
   }
 
   const saleSubtotalCents = specialSubtotalCents + comboSubtotalCents;
@@ -199,6 +217,7 @@ export function computeTransaction(input = {}) {
   return {
     quantities,
     itemDeals,
+    standardPricing,
     itemCount,
     grossCents,
     saleSubtotalCents,
@@ -278,10 +297,36 @@ function normalizeItemDeals(itemDeals = {}) {
   );
 }
 
+function normalizeStandardPricing(standardPricing = {}) {
+  const unitPriceCents = priceSettingToCents(
+    standardPricing.unitPrice,
+    DEFAULT_STANDARD_PRICING.unitPriceCents
+  );
+  const pairPriceCents = priceSettingToCents(
+    standardPricing.pairPrice,
+    DEFAULT_STANDARD_PRICING.pairPriceCents
+  );
+
+  return { unitPriceCents, pairPriceCents };
+}
+
+function priceSettingToCents(value, fallbackCents) {
+  if (value === null || value === undefined || value === "") {
+    return fallbackCents;
+  }
+
+  const cents = moneyToCents(value);
+  return clampNonNegative(cents);
+}
+
 function clampNonNegative(value) {
   if (!Number.isFinite(value)) {
     return 0;
   }
 
   return Math.max(0, value);
+}
+
+function centsToDecimalString(cents) {
+  return ((Number(cents) || 0) / 100).toFixed(2);
 }

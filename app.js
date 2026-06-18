@@ -4,16 +4,20 @@ import {
   computeTransaction,
   defaultItemDeals,
   defaultQuantities,
+  defaultStandardPricing,
   formatMoney,
   summarizeTransactions
 } from "./pricing.js";
 
 const STORAGE_KEY = "asvaro-concessions-transactions-v1";
+const SETTINGS_KEY = "asvaro-concessions-settings-v1";
 const $ = (selector) => document.querySelector(selector);
 
+const savedSettings = loadSettings();
 const state = {
   quantities: defaultQuantities(),
   itemDeals: defaultItemDeals(),
+  standardPricing: savedSettings.standardPricing || defaultStandardPricing(),
   freeCoffeeWithDonut: false,
   transactions: loadTransactions(),
   deferredInstallPrompt: null
@@ -21,6 +25,8 @@ const state = {
 
 const itemGrid = $("#itemGrid");
 const markdownGrid = $("#markdownGrid");
+const standardSingleInput = $("#standardSingleInput");
+const standardPairInput = $("#standardPairInput");
 const freeCoffeeToggle = $("#freeCoffeeToggle");
 const directDonationInput = $("#directDonationInput");
 const tenderedInput = $("#tenderedInput");
@@ -47,7 +53,7 @@ function renderStaticControls() {
       <article class="item-control" style="--accent:${item.accent}">
         <div>
           <h3>${item.name}</h3>
-          <p>$3 each</p>
+          <p data-item-price-for="${item.id}">$3.00 standard</p>
         </div>
         <div class="stepper" aria-label="${item.name} quantity">
           <button type="button" data-quantity-action="decrement" data-item-id="${item.id}" aria-label="Remove ${item.name}">-</button>
@@ -122,6 +128,17 @@ function bindEvents() {
     render();
   });
 
+  [standardSingleInput, standardPairInput].forEach((input) => {
+    input.addEventListener("input", () => {
+      state.standardPricing = {
+        unitPrice: standardSingleInput.value,
+        pairPrice: standardPairInput.value
+      };
+      saveSettings();
+      render();
+    });
+  });
+
   [directDonationInput, tenderedInput, changeGivenInput].forEach((input) => {
     input.addEventListener("input", render);
   });
@@ -188,8 +205,14 @@ function bindEvents() {
 }
 
 function render() {
+  standardSingleInput.value = state.standardPricing.unitPrice;
+  standardPairInput.value = state.standardPricing.pairPrice;
+  const transaction = getCurrentTransaction();
+
   for (const item of ITEMS) {
     $(`#${item.id}Count`).textContent = state.quantities[item.id];
+    $(`[data-item-price-for="${item.id}"]`).textContent =
+      `${formatMoney(transaction.standardPricing.unitPriceCents)} standard`;
 
     const select = $(`[data-deal-for="${item.id}"]`);
     const customPriceInput = $(`[data-custom-price-for="${item.id}"]`);
@@ -199,7 +222,6 @@ function render() {
   }
 
   freeCoffeeToggle.checked = state.freeCoffeeWithDonut;
-  const transaction = getCurrentTransaction();
   renderSummary(transaction);
   renderReports();
 }
@@ -320,6 +342,7 @@ function getCurrentTransaction() {
   return computeTransaction({
     quantities: state.quantities,
     itemDeals: state.itemDeals,
+    standardPricing: state.standardPricing,
     freeCoffeeWithDonut: state.freeCoffeeWithDonut,
     directDonation: directDonationInput.value,
     tendered: tenderedInput.value,
@@ -330,6 +353,14 @@ function getCurrentTransaction() {
 function getValidationMessage(transaction) {
   if (transaction.itemCount === 0 && transaction.directDonationCents === 0) {
     return "Add at least one item or a donation.";
+  }
+
+  if (standardSingleInput.value === "") {
+    return "Enter a standard single-item price.";
+  }
+
+  if (standardPairInput.value === "") {
+    return "Enter a standard two-item price.";
   }
 
   const customDealWithoutPrice = ITEMS.find(
@@ -481,8 +512,24 @@ function loadTransactions() {
   }
 }
 
+function loadSettings() {
+  try {
+    const rawSettings = localStorage.getItem(SETTINGS_KEY);
+    return rawSettings ? JSON.parse(rawSettings) : {};
+  } catch {
+    return {};
+  }
+}
+
 function saveTransactions() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.transactions));
+}
+
+function saveSettings() {
+  localStorage.setItem(
+    SETTINGS_KEY,
+    JSON.stringify({ standardPricing: state.standardPricing })
+  );
 }
 
 function downloadFile(filename, content, type) {
