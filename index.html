@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f766e">
+    <title>ASVARO Concessions Register</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">ASVARO electronics flea market</p>
+        <h1>Concessions register</h1>
+      </div>
+      <div class="header-actions">
+        <span class="status-pill" id="offlineStatus">Checking offline status</span>
+        <button class="secondary-button" id="installButton" hidden>Install</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="register-column" aria-labelledby="registerHeading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Current sale</p>
+            <h2 id="registerHeading">Items</h2>
+          </div>
+          <button class="secondary-button" id="clearSaleButton" type="button">Clear sale</button>
+        </div>
+
+        <div class="item-grid" id="itemGrid"></div>
+
+        <section class="panel" aria-labelledby="markdownHeading">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Markdowns</p>
+              <h2 id="markdownHeading">Pricing rules</h2>
+            </div>
+          </div>
+
+          <label class="toggle-row" for="freeCoffeeToggle">
+            <span>
+              <strong>Free coffee with donut</strong>
+              <small>Comp one coffee for each donut in this sale.</small>
+            </span>
+            <input id="freeCoffeeToggle" type="checkbox">
+          </label>
+
+          <div class="markdown-grid" id="markdownGrid"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="paymentHeading">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Payment</p>
+              <h2 id="paymentHeading">Tender and donations</h2>
+            </div>
+          </div>
+
+          <div class="payment-grid">
+            <label>
+              Direct donation
+              <input id="directDonationInput" inputmode="decimal" min="0" step="0.01" type="number" placeholder="0.00">
+            </label>
+            <label>
+              Amount paid
+              <input id="tenderedInput" inputmode="decimal" min="0" step="0.01" type="number" placeholder="Exact or cash received">
+            </label>
+            <label>
+              Change actually given
+              <input id="changeGivenInput" inputmode="decimal" min="0" step="0.01" type="number" placeholder="Leave blank for normal change">
+            </label>
+          </div>
+
+          <div class="quick-cash" aria-label="Quick cash buttons">
+            <button type="button" data-tender="exact">Exact</button>
+            <button type="button" data-tender="5">$5</button>
+            <button type="button" data-tender="10">$10</button>
+            <button type="button" data-tender="20">$20</button>
+            <button type="button" data-tender="50">$50</button>
+            <button type="button" data-change="recommended">Give change</button>
+            <button type="button" data-change="none">Keep change</button>
+          </div>
+        </section>
+      </section>
+
+      <aside class="summary-column" aria-labelledby="summaryHeading">
+        <section class="panel sticky-summary">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Register math</p>
+              <h2 id="summaryHeading">Sale summary</h2>
+            </div>
+          </div>
+
+          <div class="summary-list" id="summaryList"></div>
+          <div class="pricing-notes" id="pricingNotes"></div>
+          <p class="warning-text" id="validationMessage" hidden></p>
+          <button class="primary-button" id="recordButton" type="button">Record transaction</button>
+        </section>
+      </aside>
+
+      <section class="report-column" aria-labelledby="reportHeading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Today</p>
+            <h2 id="reportHeading">Totals and history</h2>
+          </div>
+          <div class="toolbar">
+            <button class="secondary-button" id="exportCsvButton" type="button">Export CSV</button>
+            <button class="secondary-button" id="exportJsonButton" type="button">Export JSON</button>
+            <button class="danger-button" id="resetDayButton" type="button">Reset day</button>
+          </div>
+        </div>
+
+        <div class="totals-grid" id="totalsGrid"></div>
+
+        <section class="panel">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Inventory count</p>
+              <h2>Items sold</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="numeric">Sold</th>
+                  <th class="numeric">List value</th>
+                </tr>
+              </thead>
+              <tbody id="itemTotalsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Audit trail</p>
+              <h2>Transactions</h2>
+            </div>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
